@@ -1,0 +1,96 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{listings}
+\usepackage{algpseudocode}
+\usepackage{xparse}
+\usepackage{ebproof}
+\usepackage{mathptmx}
+% \usepackage{fontspec}
+\usepackage[english]{babel}
+
+\def\pl{\partial}
+\def\dis{\displaystyle}
+\def\rarr{\rightarrow}
+
+% \newcommand{\newmacro}[nun_args]{<expr> #1 <expr> #2 ...}
+\DeclareMathAlphabet{\altmathcal}{OMS}{cmsy}{m}{n}
+
+\newcommand{\uset}[2]{\underset{#1}{#2}}
+\newcommand{\mb}[1]{\mathbf{#1}}
+\newcommand{\tb}[1]{\textbf{#1}}
+\newcommand{\mm}[1]{\mathbb{#1}}
+\newcommand{\mr}[1]{\mathrm{#1}}
+\newcommand{\abs}[1]{|| #1 ||}
+
+\newcommand{\cdblk}[2]{
+	\begin{lstlistings}[language=#1]
+		#2
+	\end{lstlistings}
+}
+
+\newcommand{\cword}[1]{\texttt{\textcolor{blue}{#1}}}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+\title{W1L1}
+\author{ntatsu}
+\date{May 28, 2024}
+
+\begin{document}
+
+\maketitle
+
+\section{Intro}
+
+% ======================================================
+% begin here
+% ======================================================
+
+\subsection*{McCulloch and Pitts model}
+\begin{alignat*}{2}
+    s &= w_1x_1 + w_2x_2 + w_0 \\
+    g &= \mr{bool} \ :: (s > 0)
+\end{alignat*}
+
+Where $s$ is the firing index, $g$ is the transfer function.
+
+\subsection*{Example perceptrons}
+\tb{AND perceptrons}
+$w_1 = w_2 = 1, w_0 = -1.5$
+
+\tb{OR perceptrons}
+$w_1 = w_2 = 1, w_0 = -0.5$
+
+\tb{NOR perceptrons}
+$w_1 = w_2 = -1, w_0 = 0.5$
+
+\subsection*{Backpropagation}
+Take a 2-layer MLP with two receptors at each layer, we have backprop DEs,
+\begin{alignat*}{2}
+    \frac{\partial E}{\partial z} &= z - t \\
+    \frac{dz}{ds} &= g'(s) = z(1 - z) \\
+    \frac{\partial s}{\partial y_1} &= v_1 \\
+    \frac{dy_1}{du_1} &= y_1(1 - y_1)
+\end{alignat*}
+
+\subsection*{ADAM}
+Maintain a running average of gradients ($m_i$) and squared gradients $v_t$ for each weight in network
+\begin{alignat*}{2}
+    m_t &= \beta_1m_{t-1} + (1-\beta_1)g_t \\
+    v_t &= \beta_2v_{t-1} + (1-\beta_2)g_t^2 \\
+\end{alignat*}
+
+
+\end{document}
+
