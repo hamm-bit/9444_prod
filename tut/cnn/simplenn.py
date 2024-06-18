@@ -2,22 +2,26 @@ import pandas as pd
 import numpy as np
 import torch
 import random
+import sklearn
 
 import matplotlib.pyplot as plt
 import torch.nn as nn
 import torch.optim as opt
 import torch.nn.functional as F
+from sklearn.metrics import classification_report, log_loss
 from os.path import join
 from mnistshow import MnistDataloader
 
 # ================================================================
 # Computation config
 # ================================================================
+print(f"Cuda is detected on machine: {torch.cuda.is_available()}")
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-num_epoch = int(1e5)
+num_epoch = int(10)
 batch_size = 100
-alpha = 0.02
+alpha = 8e-5
 
 # ================================================================
 # Collects data and pre-process for training
@@ -44,7 +48,7 @@ y_train_tensor = torch.tensor(y_train, dtype=torch.long).to(device)
 # Move testing data to CUDA
 x_test_tensor = x_test.astype(np.float32) / 255.0
 x_test_tensor = x_test_tensor.reshape(-1, 1, 28, 28)      # (batch_size, 1, 28, 28)
-x_test_tensor = torch.tensor(x_train_tensor).to(device)
+x_test_tensor = torch.tensor(x_test_tensor).to(device)
 y_test_tensor = torch.tensor(y_test, dtype=torch.long).to(device)
 
 # ================================================================
@@ -68,8 +72,10 @@ class SimpleCNN(nn.Module):
             nn.Conv2d(32, 64, kernel_size=3, padding=0),
             # nn.BatchNorm2d(64),
             nn.ReLU())
-        self.fc1 = nn.Linear(16*16, 8*8)            # DENSE
-        self.fc2 = nn.Linear(8*8, 10)               # DENSE to output
+        # Added 2nd dense layer: moar accuracy
+        self.fc1 = nn.Linear(16*16, 96)            # DENSE 1
+        self.fc2 = nn.Linear(96, 32)               # DENSE 2
+        self.fc3 = nn.Linear(32, 10)               # DENSE to output
     
     def forward(self, x):
         out = self.l1(x)
@@ -77,7 +83,8 @@ class SimpleCNN(nn.Module):
         out = self.l3(out)
         out = out.view(-1, 256)
         out = F.relu(self.fc1(out))
-        out = self.fc2(out)
+        out = F.relu(self.fc2(out))
+        out = self.fc3(out)
         return out
 
 # After initialization, we set the network
@@ -86,14 +93,16 @@ mnistnet = SimpleCNN().to(device)
 # Give it the loss function (criterion)
 # And the optimizer
 crit = nn.CrossEntropyLoss()         # defaults to reduction='mean'
-optimizer = opt.SGD(mnistnet.parameters(), lr=0.1)
+optimizer = opt.Adam(mnistnet.parameters(), lr=alpha)
 
 # Sample dset
 # Import MNIST set
-index = 1
+index = 0
 tot_size = len(x_train)
 for epoch in range(num_epoch):
+    tot_loss = 0
     for (image, label) in zip(x_train, y_train):
+        index %= (tot_size - batch_size)
         inputs = x_train_tensor[index : index + batch_size]
         labels = y_train_tensor[index : index + batch_size]
 
@@ -106,22 +115,34 @@ for epoch in range(num_epoch):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+        tot_loss += loss.item()
 
-        if index % 100 == 0:
-            print(f'Epoch [{epoch} / {num_epoch}], step [{index} / {tot_size}], loss: {loss.item():.4f}')
+        if index % 10000 == 0:
+            print(f'Epoch [{epoch} / {num_epoch}], step [{index} / {tot_size}], loss: {tot_loss:.4f}')
+        index += 1
+    print(f'Final mean of loss: {(tot_loss / 60000):.4f}')
 print("Training complete")
 
 # Tester
-test_size = len(x_test)
+# Evaluation
 mnistnet.eval()
-with torch.no_grad():
-    correct = 0; total = 0
-    for (image, label) in zip(x_test, y_test):
-        image = image.to(device)
-        output = mnistnet(image)
-        _, predicted = torch.max(output.data, 1)
-        total += 1
-        correct += (predicted == label).sum().item()
-        print(f'Test accuracy of model on the {x_test} images: {100 * correct / total:.2f}%')
+y_true = []
+y_pred = []
+y_pred_proba = []
 
-torch.save(mnistnet.state_dict(), 'model.ckpt')
+with torch.no_grad():
+    for i in range(0, len(x_test), batch_size):
+        images = x_test_tensor[i : i + batch_size].to(device)
+        labels = y_test_tensor[i : i + batch_size].to(device)
+        outputs: torch.Tensor = mnistnet(images)
+        _, predicted = torch.max(outputs.data, 1)
+
+        # Store predictions, true labels, and probabilities
+        y_true.extend(labels.cpu().numpy())
+        y_pred.extend(predicted.cpu().numpy())
+        y_pred_proba.extend(outputs.cpu().numpy())
+
+print(classification_report(y_true, y_pred))
+print(f"Log Loss: {log_loss(y_true, y_pred_proba)}")
+
+torch.save(mnistnet.state_dict(), 'mnist_model.ckpt')

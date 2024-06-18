@@ -62,7 +62,7 @@ def show_images(images, title_texts):
         if (title_text != ''):
             plt.title(title_text, fontsize = 15);        
         index += 1
-    # plt.savefig(f'mytrainandtest{index}png.png')
+    plt.savefig(f'mytrainandtest{index}png.png')
 
 #
 # Load MINST dataset
