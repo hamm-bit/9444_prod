@@ -22,7 +22,7 @@ class SimpleCNN(nn.Module):
         super(SimpleCNN, self).__init__()
         self.l1 = nn.Sequential(
             nn.Conv2d(in_channels=1, out_channels=10, kernel_size=5, padding=0),
-            nn.BatchNorm2d(16),
+            nn.BatchNorm2d(10),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2))
         self.l2 = nn.Sequential(
