@@ -73,9 +73,9 @@ class lang_reber:
             seq_raw, prob, state = self.get_one_example(self.min_length)
 
         # convert numpy array to torch tensor
-        seq = torch.from_numpy(np.asarray(seq_raw))
+        seq = torch.tensor(seq_raw, dtype=torch.long)
         input = F.one_hot(seq[0:-1],num_classes=7).float()
-        target = torch.from_numpy(np.asarray(prob)).float()
+        target = torch.tensor(prob).float()
         input = input.unsqueeze(0)
         target = target.unsqueeze(0)
         return input, seq, target, state
