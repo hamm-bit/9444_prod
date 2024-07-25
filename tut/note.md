@@ -9,3 +9,12 @@ What the markers are looking for
     - What can be improved 
 - The motivation behind this research
 - Comparison / references to modern methods / SOTA
+
+### Preference
+- 016
+- 017
+- 020
+- 022 (Conceptual dup with 043)
+- 035 (H)
+- 043 (H)
+- 44
